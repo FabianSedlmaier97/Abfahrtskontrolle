@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Abfahrtskontrolle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #020617;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.18);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --radius: 18px;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #111827 0, #020617 50%, #020617 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .shell {
+      width: 100%;
+      max-width: 650px;
+    }
+    .card {
+      background: linear-gradient(145deg, rgba(15,23,42,0.98), rgba(15,23,42,0.92));
+      border-radius: 24px;
+      border: 1px solid rgba(148,163,184,0.25);
+      box-shadow:
+        0 22px 45px rgba(15,23,42,0.9),
+        0 0 0 1px rgba(15,23,42,0.7);
+      padding: 20px 16px 14px;
+      backdrop-filter: blur(16px);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .title {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+    .subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .pill-link {
+      font-size: 0.75rem;
+      text-decoration: none;
+      color: var(--muted);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      background: rgba(15,23,42,0.9);
+    }
+
+    .section {
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 10px 10px 8px;
+      margin-bottom: 10px;
+      background: radial-gradient(circle at top left, var(--accent-soft), rgba(15,23,42,0.97));
+    }
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .section-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 10px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 0.8rem;
+    }
+    label {
+      color: var(--muted);
+    }
+    input, select, textarea {
+      border-radius: 9px;
+      border: 1px solid rgba(31,41,55,0.9);
+      padding: 6px 7px;
+      background: rgba(15,23,42,0.96);
+      color: var(--text);
+      font-size: 0.83rem;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(56,189,248,0.7);
+      box-shadow: 0 0 0 1px rgba(56,189,248,0.35);
+    }
+    textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    .driver-summary {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 16px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(120deg, #06b6d4, #3b82f6);
+      color: white;
+      box-shadow: 0 7px 18px rgba(37,99,235,0.55);
+    }
+
+    @media (max-width: 600px) {
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <header>
+        <div>
+          <div class="title">Neue Abfahrtskontrolle</div>
+          <div class="subtitle">Stammdaten werden automatisch gezogen, du füllst nur noch das Nötigste aus.</div>
+        </div>
+        <a href="index.html" class="pill-link">‹ Start</a>
+      </header>
+
+      <section class="section">
+        <div class="section-title">Fahrer</div>
+        <div class="driver-summary" id="fahrerSummary">
+          Keine Stammdaten gefunden. Bitte zuerst in „Fahrer-Stammdaten“ ausfüllen.
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">Fahrzeug</div>
+        <div class="field-grid">
+          <div class="field">
+            <label for="kennzeichen">Kennzeichen</label>
+            <input id="kennzeichen" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="km">KM-Stand</label>
+            <input id="km" autocomplete="off" inputmode="numeric">
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">Prüfpunkte</div>
+        <div class="field-grid">
+          <div class="field">
+            <label for="licht">Licht / Elektrik</label>
+            <select id="licht">
+              <option>OK</option>
+              <option>nicht OK</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="reifen">Reifen</label>
+            <select id="reifen">
+              <option>OK</option>
+              <option>nicht OK</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="bremsen">Bremsen</label>
+            <select id="bremsen">
+              <option>OK</option>
+              <option>nicht OK</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ladung">Ladung / Sicherung</label>
+            <select id="ladung">
+              <option>OK</option>
+              <option>nicht OK</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top:8px;">
+          <label for="notes">Bemerkungen</label>
+          <textarea id="notes"></textarea>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div>PDF wird lokal erzeugt. Speicherort wählst du beim Download (z. B. OneDrive).</div>
+        <div>
+          <button class="btn btn-primary" type="button" id="pdfBtn">PDF erzeugen</button>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const STORAGE_KEY = "fahrer";
+    let fahrerData = {};
+
+    function loadFahrer() {
+      const summaryEl = document.getElementById("fahrerSummary");
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        summaryEl.textContent = "Keine Stammdaten gefunden. Bitte zuerst in „Fahrer-Stammdaten“ ausfüllen.";
+        return;
+      }
+      try {
+        fahrerData = JSON.parse(raw);
+      } catch (e) {
+        summaryEl.textContent = "Fehler beim Lesen der Stammdaten.";
+        return;
+      }
+
+      const name = (fahrerData.vorname || "") + " " + (fahrerData.nachname || "");
+      const adr = [fahrerData.strasse, fahrerData.plz, fahrerData.ort].filter(Boolean).join(", ");
+
+      const fs = fahrerData.fsNr
+        ? `FS-Nr.: ${fahrerData.fsNr} (Klassen: ${fahrerData.fsKlassen || "-"}; gültig bis ${fahrerData.fsGueltig || "-"})`
+        : "";
+
+      const fqn = fahrerData.fqnNr
+        ? `FQN: ${fahrerData.fqnNr} (gültig bis ${fahrerData.fqnGueltig || "-"})`
+        : "";
+
+      const adrSchein = fahrerData.adrNr
+        ? `ADR: ${fahrerData.adrNr} (gültig bis ${fahrerData.adrGueltig || "-"})`
+        : "";
+
+      summaryEl.innerHTML =
+        `<strong>${name.trim() || "Unbekannter Fahrer"}</strong>` +
+        (adr ? `<br>${adr}` : "") +
+        (fahrerData.personalnr ? `<br>Pers.-Nr.: ${fahrerData.personalnr}` : "") +
+        (fs ? `<br>${fs}` : "") +
+        (fqn ? `<br>${fqn}` : "") +
+        (adrSchein ? `<br>${adrSchein}` : "");
+    }
+
+    function createPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+
+      // Kopfbox
+      doc.setDrawColor(56,189,248);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(10, 10, 190, 18, 3, 3);
+
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Abfahrtskontrolle LKW", 15, 21);
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        "Datum/Uhrzeit: " + new Date().toLocaleString("de-DE"),
+        198,
+        21,
+        { align: "right" }
+      );
+
+      let y = 35;
+
+      function sectionHeader(title) {
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text(title, 12, y);
+        y += 2;
+        doc.setDrawColor(148, 163, 184);
+        doc.setLineWidth(0.3);
+        doc.roundedRect(10, y, 190, 24, 2, 2);
+        y += 7;
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+      }
+
+      function line(label, value) {
+        doc.text(label, 14, y);
+        doc.text(value || "-", 50, y);
+        y += 5;
+      }
+
+      // Fahrer
+      const name = (fahrerData.vorname || "") + " " + (fahrerData.nachname || "");
+      const adr = [fahrerData.strasse, fahrerData.plz, fahrerData.ort].filter(Boolean).join(", ");
+      const fsLine = fahrerData.fsNr
+        ? `${fahrerData.fsNr} (Klassen: ${fahrerData.fsKlassen || "-"})`
+        : "";
+
+      sectionHeader("Fahrer");
+      line("Name:", name.trim());
+      line("Pers.-Nr.:", fahrerData.personalnr || "");
+      if (adr) line("Adresse:", adr);
+      if (fsLine) line("Führerschein:", fsLine);
+      y += 4;
+
+      // Fahrzeug
+      sectionHeader("Fahrzeug");
+      const kennz = document.getElementById("kennzeichen").value || "";
+      const km = document.getElementById("km").value || "";
+      line("Kennzeichen:", kennz);
+      line("KM-Stand:", km);
+      y += 4;
+
+      // Prüfpunkte – kleine Tabelle
+      sectionHeader("Prüfpunkte");
+
+      const startX = 14;
+      let rowY = y;
+      const col1 = 90;
+
+      doc.setFont("helvetica", "bold");
+      doc.text("Punkt", startX, rowY);
+      doc.text("Status", col1, rowY);
+      rowY += 4;
+
+      doc.setDrawColor(148,163,184);
+      doc.line(12, rowY, 198, rowY);
+      rowY += 4;
+
+      doc.setFont("helvetica", "normal");
+
+      function row(label, value) {
+        doc.text(label, startX, rowY);
+        doc.text(value, col1, rowY);
+        rowY += 5;
+      }
+
+      const licht = document.getElementById("licht").value;
+      const reifen = document.getElementById("reifen").value;
+      const bremsen = document.getElementById("bremsen").value;
+      const ladung = document.getElementById("ladung").value;
+
+      row("Licht / Elektrik", licht);
+      row("Reifen", reifen);
+      row("Bremsen", bremsen);
+      row("Ladung / Sicherung", ladung);
+
+      y = rowY + 4;
+
+      // Bemerkungen
+      const notes = document.getElementById("notes").value.trim();
+      if (notes) {
+        sectionHeader("Bemerkungen");
+        const textWidth = 180;
+        const splitted = doc.splitTextToSize(notes, textWidth);
+        splitted.forEach(t => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(t, 14, y);
+          y += 5;
+        });
+        y += 4;
+      }
+
+      // Fußzeile
+      function addFooter(pageNumber, totalPages) {
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        const footerY = 290;
+
+        const kennzFooter = kennz || "-";
+        const nameShort = (fahrerData.nachname || "").trim() || "-";
+
+        doc.setDrawColor(55,65,81);
+        doc.setLineWidth(0.2);
+        doc.line(10, footerY - 4, 200, footerY - 4);
+
+        doc.text(`Fahrer: ${nameShort}`, 12, footerY);
+        doc.text(`Kennzeichen: ${kennzFooter}`, 90, footerY);
+        doc.text(`Seite ${pageNumber} / ${totalPages}`, 198, footerY, { align: "right" });
+      }
+
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        addFooter(i, totalPages);
+      }
+
+      const nameShort = (fahrerData.nachname || "fahrer").replace(/\s+/g,"");
+      const dateStr = new Date().toISOString().split("T")[0];
+      const fileName = `Abfahrtskontrolle_${dateStr}_${nameShort}_${kennz || "ohneKennz"}.pdf`;
+
+      doc.save(fileName);
+    }
+
+    document.getElementById("pdfBtn").addEventListener("click", createPDF);
+    loadFahrer();
+  </script>
+</body>
+</html>

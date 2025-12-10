@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Fahrer-Stammdaten</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #020617;
+      --card-bg: #020617;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --radius: 18px;
+      --danger: #f97373;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #111827 0, #020617 50%, #020617 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .shell {
+      width: 100%;
+      max-width: 650px;
+    }
+    .card {
+      background: linear-gradient(150deg, rgba(15,23,42,0.98), rgba(15,23,42,0.92));
+      border-radius: 24px;
+      border: 1px solid rgba(148,163,184,0.25);
+      box-shadow:
+        0 22px 45px rgba(15,23,42,0.9),
+        0 0 0 1px rgba(15,23,42,0.7);
+      padding: 20px 16px 14px;
+      backdrop-filter: blur(16px);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 12px;
+    }
+    .title {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+    .subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .pill-link {
+      font-size: 0.75rem;
+      text-decoration: none;
+      color: var(--muted);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      background: rgba(15,23,42,0.9);
+    }
+
+    .tabs {
+      display: flex;
+      overflow-x: auto;
+      gap: 4px;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.95);
+      border: 1px solid rgba(31,41,55,0.9);
+      margin-bottom: 12px;
+    }
+    .tab-btn {
+      flex: 0 0 auto;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: linear-gradient(120deg, var(--accent-soft), rgba(15,23,42,0.95));
+      color: var(--text);
+      border: 1px solid rgba(56,189,248,0.6);
+    }
+
+    .panels {
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: radial-gradient(circle at top left, var(--accent-soft), rgba(15,23,42,0.98));
+      padding: 12px 10px;
+      max-height: calc(100vh - 220px);
+      overflow-y: auto;
+    }
+    .panel {
+      display: none;
+      animation: fadeIn 0.18s ease-out;
+    }
+    .panel.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 12px;
+    }
+    .field-grid.full {
+      grid-template-columns: 1fr;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    label {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    input, select, textarea {
+      border-radius: 9px;
+      border: 1px solid rgba(31,41,55,0.9);
+      padding: 6px 7px;
+      background: rgba(15,23,42,0.96);
+      color: var(--text);
+      font-size: 0.83rem;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(56,189,248,0.7);
+      box-shadow: 0 0 0 1px rgba(56,189,248,0.35);
+    }
+    textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(120deg, #06b6d4, #3b82f6);
+      color: white;
+      box-shadow: 0 7px 18px rgba(37,99,235,0.55);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid rgba(75,85,99,0.7);
+    }
+    .status {
+      font-size: 0.75rem;
+    }
+    .status.ok {
+      color: #4ade80;
+    }
+    .status.warn {
+      color: var(--danger);
+    }
+
+    @media (max-width: 600px) {
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <header>
+        <div>
+          <div class="title">Fahrer-Stammdaten</div>
+          <div class="subtitle">
+            Alles, was du für die Nachweise brauchst. Einmal eintragen, immer wieder nutzen.
+          </div>
+        </div>
+        <a href="index.html" class="pill-link">‹ Start</a>
+      </header>
+
+      <!-- Tabs -->
+      <div class="tabs" id="tabs">
+        <button class="tab-btn active" data-tab="person">Person</button>
+        <button class="tab-btn" data-tab="anschrift">Anschrift</button>
+        <button class="tab-btn" data-tab="perso">Personalausweis</button>
+        <button class="tab-btn" data-tab="fs">Führerschein</button>
+        <button class="tab-btn" data-tab="fqn">FQN</button>
+        <button class="tab-btn" data-tab="karte">Fahrerkarte</button>
+        <button class="tab-btn" data-tab="adr">ADR</button>
+      </div>
+
+      <!-- Panels -->
+      <div class="panels">
+        <!-- Person -->
+        <section class="panel active" id="panel-person">
+          <div class="field-grid">
+            <div class="field">
+              <label for="vorname">Vorname</label>
+              <input id="vorname" data-field="vorname" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="nachname">Nachname</label>
+              <input id="nachname" data-field="nachname" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="geburt">Geburtsdatum</label>
+              <input type="date" id="geburt" data-field="geburt">
+            </div>
+            <div class="field">
+              <label for="personalnr">Personal-/Mitarbeiter-Nr.</label>
+              <input id="personalnr" data-field="personalnr" autocomplete="off">
+            </div>
+          </div>
+        </section>
+
+        <!-- Anschrift -->
+        <section class="panel" id="panel-anschrift">
+          <div class="field-grid.full">
+            <div class="field">
+              <label for="strasse">Straße + Hausnummer</label>
+              <input id="strasse" data-field="strasse">
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="plz">PLZ</label>
+              <input id="plz" data-field="plz" inputmode="numeric">
+            </div>
+            <div class="field">
+              <label for="ort">Ort</label>
+              <input id="ort" data-field="ort">
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="land">Land</label>
+              <input id="land" data-field="land" placeholder="z. B. DE">
+            </div>
+            <div class="field">
+              <label for="tel">Telefon / Mobil</label>
+              <input id="tel" data-field="tel">
+            </div>
+          </div>
+        </section>
+
+        <!-- Personalausweis -->
+        <section class="panel" id="panel-perso">
+          <div class="field-grid">
+            <div class="field">
+              <label for="persoNr">Ausweisnummer</label>
+              <input id="persoNr" data-field="persoNr">
+            </div>
+            <div class="field">
+              <label for="persoGueltig">Gültig bis</label>
+              <input type="date" id="persoGueltig" data-field="persoGueltig">
+            </div>
+          </div>
+          <div class="field-grid full">
+            <div class="field">
+              <label for="persoBehoerde">Ausstellende Behörde</label>
+              <input id="persoBehoerde" data-field="persoBehoerde">
+            </div>
+            <div class="field">
+              <label for="persoHinweis">Hinweise</label>
+              <textarea id="persoHinweis" data-field="persoHinweis"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- Führerschein -->
+        <section class="panel" id="panel-fs">
+          <div class="field-grid">
+            <div class="field">
+              <label for="fsNr">Führerscheinnummer</label>
+              <input id="fsNr" data-field="fsNr">
+            </div>
+            <div class="field">
+              <label for="fsGueltig">Gültig bis</label>
+              <input type="date" id="fsGueltig" data-field="fsGueltig">
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="fsKlassen">Führerscheinklassen</label>
+              <input id="fsKlassen" data-field="fsKlassen" placeholder="z. B. C, CE">
+            </div>
+            <div class="field">
+              <label for="fsBehoerde">Ausstellende Behörde</label>
+              <input id="fsBehoerde" data-field="fsBehoerde">
+            </div>
+          </div>
+          <div class="field-grid full">
+            <div class="field">
+              <label for="fsHinweis">Hinweise (z. B. Auflagen)</label>
+              <textarea id="fsHinweis" data-field="fsHinweis"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- FQN -->
+        <section class="panel" id="panel-fqn">
+          <div class="field-grid">
+            <div class="field">
+              <label for="fqnNr">FQN-Nummer</label>
+              <input id="fqnNr" data-field="fqnNr">
+            </div>
+            <div class="field">
+              <label for="fqnGueltig">Gültig bis</label>
+              <input type="date" id="fqnGueltig" data-field="fqnGueltig">
+            </div>
+          </div>
+          <div class="field-grid full">
+            <div class="field">
+              <label for="fqnBehoerde">Ausstellende Stelle</label>
+              <input id="fqnBehoerde" data-field="fqnBehoerde">
+            </div>
+            <div class="field">
+              <label for="fqnHinweis">Hinweise</label>
+              <textarea id="fqnHinweis" data-field="fqnHinweis"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- Fahrerkarte -->
+        <section class="panel" id="panel-karte">
+          <div class="field-grid">
+            <div class="field">
+              <label for="karteNr">Kartennummer</label>
+              <input id="karteNr" data-field="karteNr">
+            </div>
+            <div class="field">
+              <label for="karteGueltig">Gültig bis</label>
+              <input type="date" id="karteGueltig" data-field="karteGueltig">
+            </div>
+          </div>
+          <div class="field-grid full">
+            <div class="field">
+              <label for="karteHinweis">Hinweise</label>
+              <textarea id="karteHinweis" data-field="karteHinweis"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- ADR -->
+        <section class="panel" id="panel-adr">
+          <div class="field-grid">
+            <div class="field">
+              <label for="adrNr">ADR-Nummer / Schein-Nr.</label>
+              <input id="adrNr" data-field="adrNr">
+            </div>
+            <div class="field">
+              <label for="adrGueltig">Gültig bis</label>
+              <input type="date" id="adrGueltig" data-field="adrGueltig">
+            </div>
+          </div>
+          <div class="field-grid full">
+            <div class="field">
+              <label for="adrKlassen">Gefahrgutklassen</label>
+              <input id="adrKlassen" data-field="adrKlassen" placeholder="z. B. 2, 3, 8, 9">
+            </div>
+            <div class="field">
+              <label for="adrHinweis">Hinweise</label>
+              <textarea id="adrHinweis" data-field="adrHinweis"></textarea>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="footer">
+        <div id="status" class="status">Noch nicht gespeichert.</div>
+        <div>
+          <button class="btn btn-ghost" type="button" id="resetBtn">Zurücksetzen</button>
+          <button class="btn btn-primary" type="button" id="saveBtn">Speichern</button>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "fahrer";
+
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const panels = document.querySelectorAll(".panel");
+    const statusEl = document.getElementById("status");
+    const saveBtn = document.getElementById("saveBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.tab;
+        tabButtons.forEach(b => b.classList.remove("active"));
+        panels.forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("panel-" + target).classList.add("active");
+      });
+    });
+
+    function loadData() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        statusEl.textContent = "Noch nicht gespeichert.";
+        statusEl.className = "status warn";
+        return;
+      }
+      try {
+        const data = JSON.parse(raw);
+        document.querySelectorAll("[data-field]").forEach(input => {
+          const key = input.dataset.field;
+          if (data.hasOwnProperty(key)) {
+            input.value = data[key];
+          }
+        });
+        statusEl.textContent = "Stammdaten geladen.";
+        statusEl.className = "status ok";
+      } catch (e) {
+        statusEl.textContent = "Fehler beim Laden der Daten.";
+        statusEl.className = "status warn";
+      }
+    }
+
+    function saveData() {
+      const data = {};
+      document.querySelectorAll("[data-field]").forEach(input => {
+        data[input.dataset.field] = input.value || "";
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      statusEl.textContent = "Gespeichert " + new Date().toLocaleTimeString();
+      statusEl.className = "status ok";
+    }
+
+    function resetData() {
+      if (!confirm("Alle Stammdaten löschen?")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      document.querySelectorAll("[data-field]").forEach(input => {
+        input.value = "";
+      });
+      statusEl.textContent = "Zurückgesetzt. Noch nicht gespeichert.";
+      statusEl.className = "status warn";
+    }
+
+    let saveTimer;
+    document.addEventListener("input", evt => {
+      if (!evt.target.matches("[data-field]")) return;
+      clearTimeout(saveTimer);
+      statusEl.textContent = "Änderungen …";
+      statusEl.className = "status";
+      saveTimer = setTimeout(saveData, 800);
+    });
+
+    saveBtn.addEventListener("click", saveData);
+    resetBtn.addEventListener("click", resetData);
+
+    loadData();
+  </script>
+</body>
+</html>

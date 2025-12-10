@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Historie Abfahrtskontrollen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: #020617;
+      color: #e5e7eb;
+      margin: 0;
+      padding: 16px;
+    }
+    .shell {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+    }
+    .filters label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .filters input, .filters select {
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 0.85rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th, td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #1f2937;
+    }
+    th {
+      text-align: left;
+      background: #0f172a;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tr:nth-child(even) td {
+      background: rgba(15,23,42,0.6);
+    }
+    tr:nth-child(odd) td {
+      background: rgba(15,23,42,0.8);
+    }
+    .btn {
+      border-radius: 999px;
+      border: 1px solid #4b5563;
+      background: transparent;
+      color: #e5e7eb;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .btn-primary {
+      border-color: #38bdf8;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <h1>Historie Abfahrtskontrollen</h1>
+    <p style="font-size:0.85rem;color:#9ca3af;margin-bottom:10px;">
+      Filter nach Jahr / Monat / Kennzeichen. Eintrag auswählen und PDF erneut generieren.
+    </p>
+
+    <div class="filters">
+      <label>
+        Jahr
+        <select id="filterYear">
+          <option value="">alle</option>
+        </select>
+      </label>
+      <label>
+        Monat
+        <select id="filterMonth">
+          <option value="">alle</option>
+          <option value="1">01</option>
+          <option value="2">02</option>
+          <option value="3">03</option>
+          <option value="4">04</option>
+          <option value="5">05</option>
+          <option value="6">06</option>
+          <option value="7">07</option>
+          <option value="8">08</option>
+          <option value="9">09</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+        </select>
+      </label>
+      <label style="flex:1;">
+        Kennzeichen (Teilstring)
+        <input id="filterPlate" placeholder="z. B. BC-1234">
+      </label>
+      <button class="btn" id="resetFilters" type="button">Filter zurücksetzen</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Fahrer</th>
+          <th>Kennzeichen</th>
+          <th>KM</th>
+          <th>PDF-Name</th>
+          <th>Aktion</th>
+        </tr>
+      </thead>
+      <tbody id="logBody">
+        <!-- Einträge werden per JS eingefügt -->
+      </tbody>
+    </table>
+  </main>
+
+  <!-- jsPDF einbinden, damit PDF neu erzeugt werden kann -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const LOG_KEY = "kontrollLog";
+    let logEntries = [];
+
+    function loadLog() {
+      const raw = localStorage.getItem(LOG_KEY);
+      if (!raw) {
+        logEntries = [];
+        renderLog();
+        return;
+      }
+      try {
+        const list = JSON.parse(raw);
+        logEntries = Array.isArray(list) ? list : [];
+      } catch (e) {
+        logEntries = [];
+      }
+      fillYearFilter();
+      renderLog();
+    }
+
+    function fillYearFilter() {
+      const yearSelect = document.getElementById("filterYear");
+      const years = Array.from(new Set(logEntries.map(e => e.year))).sort();
+      years.forEach(y => {
+        const opt = document.createElement("option");
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      });
+    }
+
+    function renderLog() {
+      const tbody = document.getElementById("logBody");
+      tbody.innerHTML = "";
+
+      const year = document.getElementById("filterYear").value;
+      const month = document.getElementById("filterMonth").value;
+      const plate = document.getElementById("filterPlate").value.trim().toLowerCase();
+
+      const filtered = logEntries.filter(e => {
+        if (year && String(e.year) !== year) return false;
+        if (month && String(e.month) !== month) return false;
+        if (plate && !(e.kennzeichen || "").toLowerCase().includes(plate)) return false;
+        return true;
+      });
+
+      filtered
+        .sort((a,b) => a.timestamp < b.timestamp ? 1 : -1) // neueste oben
+        .forEach(entry => {
+          const tr = document.createElement("tr");
+
+          const date = entry.timestamp ? entry.timestamp.split("T")[0] : "";
+          const fahrer = (entry.fahrer?.nachname || "") + " " + (entry.fahrer?.vorname || "");
+          const kennz = entry.kennzeichen || "";
+          const km = entry.km || "";
+          const fileName = entry.fileName || "";
+
+          tr.innerHTML = `
+            <td>${date}</td>
+            <td>${fahrer || "-"}</td>
+            <td>${kennz}</td>
+            <td>${km}</td>
+            <td>${fileName}</td>
+            <td><button class="btn btn-primary" data-id="${entry.id}">PDF neu</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+    }
+
+    // Klick auf "PDF neu" -> PDF aus Eintrag neu generieren
+    document.getElementById("logBody").addEventListener("click", function (evt) {
+      const btn = evt.target.closest("button[data-id]");
+      if (!btn) return;
+      const id = btn.getAttribute("data-id");
+      const entry = logEntries.find(e => e.id === id);
+      if (entry) {
+        recreatePdf(entry);
+      }
+    });
+
+    // Filter-Events
+    document.getElementById("filterYear").addEventListener("change", renderLog);
+    document.getElementById("filterMonth").addEventListener("change", renderLog);
+    document.getElementById("filterPlate").addEventListener("input", renderLog);
+    document.getElementById("resetFilters").addEventListener("click", () => {
+      document.getElementById("filterYear").value = "";
+      document.getElementById("filterMonth").value = "";
+      document.getElementById("filterPlate").value = "";
+      renderLog();
+    });
+
+    // PDF aus Log-Eintrag neu generieren
+    function recreatePdf(entry) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+
+      // Kopf
+      doc.setDrawColor(56,189,248);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(10, 10, 190, 18, 3, 3);
+
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Abfahrtskontrolle LKW", 15, 21);
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      const dt = entry.timestamp ? new Date(entry.timestamp) : new Date();
+      doc.text(
+        "Datum/Uhrzeit: " + dt.toLocaleString("de-DE"),
+        198,
+        21,
+        { align: "right" }
+      );
+
+      let y = 35;
+
+      function sectionHeader(title) {
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text(title, 12, y);
+        y += 2;
+        doc.setDrawColor(148, 163, 184);
+        doc.setLineWidth(0.3);
+        doc.roundedRect(10, y, 190, 24, 2, 2);
+        y += 7;
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+      }
+
+      function line(label, value) {
+        doc.text(label, 14, y);
+        doc.text(value || "-", 50, y);
+        y += 5;
+      }
+
+      // Fahrer
+      const f = entry.fahrer || {};
+      const name = (f.vorname || "") + " " + (f.nachname || "");
+      sectionHeader("Fahrer");
+      line("Name:", name.trim());
+      line("Pers.-Nr.:", f.personalnr || "");
+      y += 4;
+
+      // Fahrzeug
+      sectionHeader("Fahrzeug");
+      line("Kennzeichen:", entry.kennzeichen || "");
+      line("KM-Stand:", entry.km || "");
+      y += 4;
+
+      // Prüfpunkte
+      sectionHeader("Prüfpunkte");
+
+      const startX = 14;
+      let rowY = y;
+      const col1 = 90;
+
+      doc.setFont("helvetica", "bold");
+      doc.text("Punkt", startX, rowY);
+      doc.text("Status", col1, rowY);
+      rowY += 4;
+
+      doc.setDrawColor(148,163,184);
+      doc.line(12, rowY, 198, rowY);
+      rowY += 4;
+
+      doc.setFont("helvetica", "normal");
+
+      function row(label, value) {
+        doc.text(label, startX, rowY);
+        doc.text(value || "-", col1, rowY);
+        rowY += 5;
+      }
+
+      row("Licht / Elektrik", entry.licht);
+      row("Reifen", entry.reifen);
+      row("Bremsen", entry.bremsen);
+      row("Ladung / Sicherung", entry.ladung);
+
+      y = rowY + 4;
+
+      // Bemerkungen
+      if (entry.notes) {
+        sectionHeader("Bemerkungen");
+        const textWidth = 180;
+        const splitted = doc.splitTextToSize(entry.notes, textWidth);
+        splitted.forEach(t => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(t, 14, y);
+          y += 5;
+        });
+        y += 4;
+      }
+
+      // Fußzeile
+      function addFooter(pageNumber, totalPages) {
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        const footerY = 290;
+
+        const kennzFooter = entry.kennzeichen || "-";
+        const nameShort = (f.nachname || "").trim() || "-";
+
+        doc.setDrawColor(55,65,81);
+        doc.setLineWidth(0.2);
+        doc.line(10, footerY - 4, 200, footerY - 4);
+
+        doc.text(`Fahrer: ${nameShort}`, 12, footerY);
+        doc.text(`Kennzeichen: ${kennzFooter}`, 90, footerY);
+        doc.text(`Seite ${pageNumber} / ${totalPages}`, 198, footerY, { align: "right" });
+      }
+
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        addFooter(i, totalPages);
+      }
+
+      const fileName = entry.fileName || "Abfahrtskontrolle_neu.pdf";
+      doc.save(fileName);
+    }
+
+    loadLog();
+  </script>
+</body>
+</html>

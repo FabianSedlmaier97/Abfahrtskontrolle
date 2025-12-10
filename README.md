@@ -9,3 +9,8 @@ In diesem Repository befindet sich die Web-Oberfläche um einfach und mobil mit 
 - Allgemeinen Button einfügen, mit dem auf die Startseite zurückgekehrt werden kann (Abfrage, ob speichern oder ohne speichern fortfahren)
 - Einzelne Reiter mit den entsprechend zugehörigen Daten anpassen.
 - Mehr Buttons --> Speichern - Nächste Seite - Abbrechen
+
+## Änderungen xx.xx.xxxx
+- 
+### Nächster Schritt: 
+- 
